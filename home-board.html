@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Home Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0C0D10;
+    --panel: #16181D;
+    --panel-2: #1D2027;
+    --hair: #2A2D35;
+    --ink: #EDEDE6;
+    --ink-dim: #9A9EA8;
+    --amber: #FFB000;
+    --amber-dim: #7A5A16;
+    --paper: #F3EEE2;
+    --paper-ink: #2B2A26;
+    --red: #E21836;
+    --blue: #009CDE;
+    --yellow: #FFD100;
+    --orange: #F7941D;
+    --green: #00A650;
+    --silver: #A1A3A4;
+    --err: #E85C5C;
+  }
+  *{ box-sizing: border-box; }
+  html, body{
+    margin:0; height:100%; width:100%;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+  }
+  #app{
+    height:100%; width:100%;
+    display:flex; flex-direction:column;
+    padding: 28px 32px 20px;
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    display:flex; align-items:baseline; justify-content:space-between;
+    padding-bottom: 18px; margin-bottom: 18px;
+    border-bottom: 1px solid var(--hair);
+    flex-shrink:0;
+  }
+  #clock{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    font-size: clamp(36px, 6vw, 64px);
+    letter-spacing: -0.01em;
+    line-height:1;
+  }
+  #clock span.secs{ color: var(--ink-dim); font-size: 0.5em; margin-left:4px; }
+  #date{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:500;
+    font-size: clamp(16px, 2vw, 22px);
+    color: var(--ink-dim);
+  }
+
+  /* ---------- Layout ---------- */
+  main{
+    flex:1; min-height:0;
+    display:grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 28px;
+  }
+  @media (max-aspect-ratio: 6/5){
+    main{ grid-template-columns: 1fr; grid-template-rows: 1.1fr 1fr; }
+  }
+  section.col{ min-height:0; display:flex; flex-direction:column; }
+
+  .col-head{
+    display:flex; align-items:center; gap:10px;
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600; font-size:15px;
+    color: var(--ink-dim);
+    margin-bottom: 12px;
+    flex-shrink:0;
+  }
+  .col-head .dot{ width:7px; height:7px; border-radius:50%; background: var(--amber); }
+  .col-head .updated{ margin-left:auto; font-size:12px; font-weight:400; color:#5C606A; font-family:'Inter',sans-serif; }
+
+  /* ---------- Calendar panel (paper ticket) ---------- */
+  #calendarWrap{
+    flex:1; min-height:0;
+    background: var(--paper);
+    border-radius: 6px;
+    overflow:hidden;
+    position:relative;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.03) inset;
+  }
+  #calendarWrap iframe{
+    width:100%; height:100%; border:0; display:block;
+  }
+  #calendarEmpty{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column; gap:10px;
+    color: var(--paper-ink); text-align:center; padding: 0 40px;
+    font-family:'Space Grotesk', sans-serif;
+  }
+  #calendarEmpty p{ font-family:'Inter', sans-serif; font-weight:400; font-size:14px; color:#6b6a63; margin:0; }
+
+  /* ---------- Transit panel ---------- */
+  #transitWrap{
+    flex:1; min-height:0;
+    display:flex; flex-direction:column; gap:16px;
+    overflow-y:auto;
+    padding-right:4px;
+  }
+  .board{
+    background: var(--panel);
+    border: 1px solid var(--hair);
+    border-radius: 6px;
+    padding: 16px 18px;
+    flex-shrink:0;
+  }
+  .board-title{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:10px;
+  }
+  .board-title .name{
+    font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:16px;
+  }
+  .board-title .kind{
+    font-size:11px; color:#5C606A; text-transform:uppercase; letter-spacing:0.04em;
+  }
+  .row{
+    display:flex; align-items:flex-start; gap:12px;
+    padding: 8px 0;
+    border-top: 1px solid var(--hair);
+  }
+  .row:first-of-type{ border-top:none; }
+  .chip{
+    flex-shrink:0; margin-top:1px;
+    min-width:30px; height:22px; padding:0 6px; border-radius:4px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono', monospace; font-weight:600; font-size:11px;
+    color:#fff;
+  }
+  .chip.YL, .chip.yellow{ color:#1a1a1a; }
+  .dest{ flex:1; font-size:14px; color:var(--ink); line-height:1.4; }
+  .dest .line-name{ font-weight:600; color:var(--ink); }
+  .dest .route-num{ font-weight:600; color:var(--ink); margin-right:4px; }
+  .mins{
+    font-family:'IBM Plex Mono', monospace; font-weight:600;
+    font-size:18px; color:var(--amber);
+    min-width:56px; text-align:right;
+  }
+  .mins.now{ color:#FFD966; }
+  .muted-row{ padding:10px 0; color:#5C606A; font-size:13px; }
+  .err-row{ padding:10px 0; color:var(--err); font-size:13px; }
+
+  /* ---------- Settings ---------- */
+  #gear{
+    position:fixed; top:14px; right:16px;
+    width:34px; height:34px; border-radius:50%;
+    background:transparent; border:1px solid var(--hair); color:#5C606A;
+    cursor:pointer; font-size:16px;
+    display:flex; align-items:center; justify-content:center;
+    z-index:50;
+  }
+  #gear:hover{ color:var(--ink); border-color:#444; }
+
+  #settingsOverlay{
+    position:fixed; inset:0; background:rgba(0,0,0,0.6);
+    display:none; align-items:center; justify-content:center; z-index:100;
+    padding:24px;
+  }
+  #settingsOverlay.open{ display:flex; }
+  #settingsPanel{
+    background: var(--panel-2); border:1px solid var(--hair); border-radius:10px;
+    width:min(640px, 100%); max-height:90vh; overflow-y:auto;
+    padding: 28px 30px;
+  }
+  #settingsPanel h2{
+    font-family:'Space Grotesk', sans-serif; margin:0 0 4px; font-size:20px;
+  }
+  #settingsPanel .sub{ color:var(--ink-dim); font-size:13px; margin:0 0 22px; }
+  .field{ margin-bottom:18px; }
+  .field label{ display:block; font-size:13px; font-weight:600; margin-bottom:5px; }
+  .field .help{ font-size:12px; color:var(--ink-dim); margin:0 0 6px; line-height:1.5; }
+  .field .help a{ color: var(--amber); }
+  .field input, .field textarea{
+    width:100%; background:#0C0D10; border:1px solid var(--hair); color:var(--ink);
+    border-radius:6px; padding:9px 10px; font-size:13px; font-family:'IBM Plex Mono', monospace;
+    resize:vertical;
+  }
+  .field textarea{ min-height:70px; line-height:1.6; }
+  .field input:focus, .field textarea:focus{ outline:none; border-color:var(--amber-dim); }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  #settingsPanel .actions{ display:flex; gap:10px; margin-top:8px; }
+  #settingsPanel button.primary{
+    background: var(--amber); color:#1a1a1a; border:none; border-radius:6px;
+    padding:10px 18px; font-weight:600; font-size:14px; cursor:pointer;
+  }
+  #settingsPanel button.secondary{
+    background:transparent; color:var(--ink-dim); border:1px solid var(--hair); border-radius:6px;
+    padding:10px 18px; font-size:14px; cursor:pointer;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div>
+      <div id="clock">--:--<span class="secs">--</span></div>
+    </div>
+    <div id="date">Loading&hellip;</div>
+  </header>
+
+  <main>
+    <section class="col">
+      <div class="col-head"><span class="dot"></span>Calendar<span class="updated" id="calUpdated"></span></div>
+      <div id="calendarWrap">
+        <div id="calendarEmpty" style="display:none;">
+          <div>No calendar connected yet</div>
+          <p>Add your Google Calendar embed link in settings (gear icon, top right).</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="col">
+      <div class="col-head"><span class="dot"></span>Departures<span class="updated" id="transitUpdated"></span></div>
+      <div id="transitWrap">
+        <div class="muted-row">Add a WMATA API key and at least one station or stop in settings to get started.</div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<button id="gear" title="Settings">&#9881;</button>
+
+<div id="settingsOverlay">
+  <div id="settingsPanel">
+    <h2>Board settings</h2>
+    <p class="sub">Saved on this device only. The page reloads after you save.</p>
+
+    <div class="field">
+      <label>Google Calendar embed link</label>
+      <p class="help">In Google Calendar: Settings &rarr; pick your calendar under "Settings for my calendars" &rarr; Integrate calendar &rarr; paste the whole "Embed code" box below (or just the src URL). If the calendar isn't public, sign in to your Google account in this browser first.</p>
+      <textarea id="cfgCalendar" placeholder='&lt;iframe src="https://calendar.google.com/calendar/embed?src=..." ...&gt;&lt;/iframe&gt;'></textarea>
+    </div>
+
+    <div class="field">
+      <label>WMATA API key</label>
+      <p class="help">Free from <a href="https://developer.wmata.com" target="_blank">developer.wmata.com</a> &mdash; sign up, subscribe to the default (free) tier, copy your key. Good for 10 requests/second and 50,000/day, far more than this page needs.</p>
+      <input id="cfgKey" type="text" placeholder="32-character key">
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label>Rail stations</label>
+        <p class="help">One per line: <code>CODE|Label</code>. Station codes are listed on the WMATA developer site under Rail Station Information. Stations with two platforms (Metro Center, Gallery Place, Fort Totten, L'Enfant Plaza) need both codes, comma-separated.</p>
+        <textarea id="cfgRail" placeholder="A01|Metro Center&#10;N06,K01|Van Ness"></textarea>
+      </div>
+      <div class="field">
+        <label>Bus stops</label>
+        <p class="help">One per line: <code>StopID|Label</code>. Find your 7-digit stop ID by searching your stop on wmata.com's Rider Tools/Arrivals search.</p>
+        <textarea id="cfgBus" placeholder="1001195|H St &amp; 8th NE"></textarea>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Refresh interval (seconds)</label>
+      <input id="cfgInterval" type="number" min="15" value="30" style="width:100px;">
+    </div>
+
+    <div class="actions">
+      <button class="primary" id="saveBtn">Save &amp; reload</button>
+      <button class="secondary" id="cancelBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORE_KEY = 'homeboard.config.v1';
+const LINE_NAMES = {RD:'Red',BL:'Blue',YL:'Yellow',OR:'Orange',GR:'Green',SV:'Silver'};
+
+// Direction is inferred from each line's actual terminus geography (not a
+// field WMATA's rail API provides directly). Lines that don't run on a
+// clean compass axis (Red's two branches both head north) get their best
+// real-world approximation rather than a forced label.
+const RAIL_TERMINI = [
+  ['shady grove', 'Northwest'],
+  ['glenmont', 'Northeast'],
+  ['greenbelt', 'North'],
+  ['branch ave', 'South'],
+  ['huntington', 'South'],
+  ['franconia', 'South'],
+  ['vienna', 'West'],
+  ['ashburn', 'West'],
+  ['wiehle', 'West'],
+  ['new carrollton', 'East'],
+  ['largo', 'East']
+];
+function railDirectionFor(destName){
+  const d = (destName || '').toLowerCase();
+  for(const [key, dir] of RAIL_TERMINI){
+    if(d.includes(key)) return dir;
+  }
+  return '';
+}
+
+function loadConfig(){
+  try{ return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; }
+  catch(e){ return {}; }
+}
+function saveConfig(cfg){ localStorage.setItem(STORE_KEY, JSON.stringify(cfg)); }
+
+function parseLines(text){
+  return (text||'').split('\n').map(l=>l.trim()).filter(Boolean).map(line=>{
+    const [codes, ...rest] = line.split('|');
+    return { codes: codes.trim(), label: (rest.join('|')||codes).trim() };
+  });
+}
+
+function buildCalendarSrc(raw){
+  if(!raw) return '';
+  const m = raw.match(/src="([^"]+)"/);
+  let s = m ? m[1] : raw.trim();
+  s = s.replace(/&amp;/g, '&');
+  try{
+    const url = new URL(s);
+    url.searchParams.set('mode','AGENDA');
+    url.searchParams.set('showTitle','0');
+    url.searchParams.set('showPrint','0');
+    url.searchParams.set('showTabs','0');
+    url.searchParams.set('showCalendars','0');
+    url.searchParams.set('showTz','0');
+    url.searchParams.set('height','900');
+    return url.toString();
+  }catch(e){ return s; }
+}
+
+/* ---------- Clock ---------- */
+function tickClock(){
+  const now = new Date();
+  let h = now.getHours(); const ampm = h>=12?'PM':'AM';
+  h = h%12; if(h===0) h=12;
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  const ss = String(now.getSeconds()).padStart(2,'0');
+  document.getElementById('clock').innerHTML = `${h}:${mm} <span class="secs">${ampm}</span>`;
+  document.getElementById('date').textContent = now.toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric'});
+}
+
+/* ---------- Calendar ---------- */
+function renderCalendar(cfg){
+  const wrap = document.getElementById('calendarWrap');
+  const src = buildCalendarSrc(cfg.calendar);
+  if(!src){
+    wrap.innerHTML = `<div id="calendarEmpty"><div>No calendar connected yet</div><p>Add your Google Calendar embed link in settings (gear icon, top right).</p></div>`;
+    return;
+  }
+  if(!wrap.querySelector('iframe')){
+    wrap.innerHTML = `<iframe src="${src}"></iframe>`;
+  }
+  document.getElementById('calUpdated').textContent = 'live';
+}
+
+/* ---------- Transit ---------- */
+function minsLabel(min){
+  if(min === null || min === undefined) return '&mdash;';
+  const s = String(min).trim();
+  if(s === 'BRD') return 'BRD';
+  if(s === 'ARR') return 'ARR';
+  if(s === '---' || s === '') return '&mdash;';
+  return s + ' min';
+}
+
+async function fetchWmata(url, apiKey){
+  let res;
+  try{
+    res = await fetch(url, { headers: { api_key: apiKey } });
+  }catch(e){
+    throw new Error('network/CORS blocked');
+  }
+  if(res.status === 401 || res.status === 403){
+    throw new Error('key rejected (' + res.status + ')');
+  }
+  if(!res.ok){
+    throw new Error('HTTP ' + res.status);
+  }
+  return res;
+}
+
+function minToNumber(min){
+  if(min === 'BRD') return -2;
+  if(min === 'ARR') return -1;
+  const n = parseInt(min, 10);
+  return isNaN(n) ? 999 : n;
+}
+
+// Picks the soonest trains while guaranteeing every line present at a shared
+// platform gets a slot, so a busy line (e.g. Green) can't crowd out a
+// quieter one (e.g. Yellow) sharing the same station code.
+function pickDiverseTrains(trains, maxTotal, maxPerLine){
+  const sorted = [...trains].sort((a,b) => minToNumber(a.min) - minToNumber(b.min));
+  const counts = {};
+  const picked = [];
+  for(const t of sorted){
+    const c = counts[t.line] || 0;
+    if(c < maxPerLine && picked.length < maxTotal){
+      counts[t.line] = c + 1;
+      picked.push(t);
+    }
+  }
+  if(picked.length < maxTotal){
+    for(const t of sorted){
+      if(picked.length >= maxTotal) break;
+      if(!picked.includes(t)) picked.push(t);
+    }
+  }
+  return picked.sort((a,b) => minToNumber(a.min) - minToNumber(b.min));
+}
+
+async function fetchRail(entry, apiKey){
+  const url = `https://api.wmata.com/StationPrediction.svc/json/GetPrediction/${encodeURIComponent(entry.codes)}`;
+  const res = await fetchWmata(url, apiKey);
+  const data = await res.json();
+  const trains = (data.Trains || []).filter(t => t.Line && t.Line !== 'No').map(t => ({
+    line: t.Line,
+    dest: t.DestinationName || t.Destination || '—',
+    min: t.Min
+  }));
+  return pickDiverseTrains(trains, 6, 3);
+}
+
+async function fetchBus(entry, apiKey){
+  const url = `https://api.wmata.com/NextBusService.svc/json/jPredictions?StopID=${encodeURIComponent(entry.codes)}`;
+  const res = await fetchWmata(url, apiKey);
+  const data = await res.json();
+  return (data.Predictions || []).slice(0, 5).map(p => ({
+    route: p.RouteID,
+    dest: p.DirectionText,
+    min: p.Minutes
+  }));
+}
+
+function parseBusDirection(text){
+  if(!text) return { compass: '', stop: '—' };
+  const m = text.match(/^(north|south|east|west)(?:bound)?\s*(?:to\s+)?(.*)$/i);
+  if(m && m[2]){
+    const word = m[1][0].toUpperCase() + m[1].slice(1).toLowerCase();
+    return { compass: word + 'bound', stop: m[2].trim() };
+  }
+  return { compass: '', stop: text };
+}
+
+function renderBoard(entry, kind, items, errorMsg){
+  const el = document.createElement('div');
+  el.className = 'board';
+  const head = document.createElement('div');
+  head.className = 'board-title';
+  head.innerHTML = `<span class="name">${entry.label}</span><span class="kind">${kind}</span>`;
+  el.appendChild(head);
+
+  if(errorMsg){
+    const r = document.createElement('div');
+    r.className = 'err-row';
+    r.textContent = `Can't reach this one — ${errorMsg}.`;
+    el.appendChild(r);
+    return el;
+  }
+  if(!items || items.length === 0){
+    const r = document.createElement('div');
+    r.className = 'muted-row';
+    r.textContent = 'Nothing scheduled right now.';
+    el.appendChild(r);
+    return el;
+  }
+  items.forEach(it=>{
+    const row = document.createElement('div');
+    row.className = 'row';
+    if(kind === 'Rail'){
+      const lineName = LINE_NAMES[it.line] || it.line;
+      const dir = railDirectionFor(it.dest);
+      const label = dir ? `${dir}bound ${lineName}` : lineName;
+      row.innerHTML = `<span class="chip ${it.line}" style="background:var(--${lineVar(it.line)})">${it.line}</span>
+        <span class="dest"><span class="line-name">${label}</span> to ${it.dest}</span>
+        <span class="mins ${['BRD','ARR'].includes(it.min)?'now':''}">${minsLabel(it.min)}</span>`;
+    }else{
+      const {compass, stop} = parseBusDirection(it.dest);
+      const destHtml = compass
+        ? `<span class="line-name">${compass}</span> to ${stop}`
+        : stop;
+      row.innerHTML = `<span class="chip" style="background:#3A3D46">${it.route}</span>
+        <span class="dest">${destHtml}</span>
+        <span class="mins ${it.min===0?'now':''}">${minsLabel(it.min)}</span>`;
+    }
+    el.appendChild(row);
+  });
+  return el;
+}
+
+function lineVar(code){
+  return { RD:'red', BL:'blue', YL:'yellow', OR:'orange', GR:'green', SV:'silver' }[code] || 'silver';
+}
+
+async function refreshTransit(cfg){
+  const wrap = document.getElementById('transitWrap');
+  const rail = parseLines(cfg.rail);
+  const bus = parseLines(cfg.bus);
+
+  if(!cfg.wmataKey || (rail.length===0 && bus.length===0)){
+    wrap.innerHTML = `<div class="muted-row">Add a WMATA API key and at least one station or stop in settings to get started.</div>`;
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+  for(const entry of bus){
+    try{
+      const items = await fetchBus(entry, cfg.wmataKey);
+      frag.appendChild(renderBoard(entry, 'Bus', items, null));
+    }catch(e){
+      frag.appendChild(renderBoard(entry, 'Bus', null, e.message || 'unknown error'));
+    }
+  }
+  for(const entry of rail){
+    try{
+      const items = await fetchRail(entry, cfg.wmataKey);
+      frag.appendChild(renderBoard(entry, 'Rail', items, null));
+    }catch(e){
+      frag.appendChild(renderBoard(entry, 'Rail', null, e.message || 'unknown error'));
+    }
+  }
+  wrap.innerHTML = '';
+  wrap.appendChild(frag);
+  document.getElementById('transitUpdated').textContent =
+    'updated ' + new Date().toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+}
+
+/* ---------- Settings modal ---------- */
+function openSettings(cfg){
+  document.getElementById('cfgCalendar').value = cfg.calendar || '';
+  document.getElementById('cfgKey').value = cfg.wmataKey || '';
+  document.getElementById('cfgRail').value = cfg.rail || '';
+  document.getElementById('cfgBus').value = cfg.bus || '';
+  document.getElementById('cfgInterval').value = cfg.interval || 30;
+  document.getElementById('settingsOverlay').classList.add('open');
+}
+function closeSettings(){
+  document.getElementById('settingsOverlay').classList.remove('open');
+}
+
+document.getElementById('gear').addEventListener('click', ()=> openSettings(loadConfig()));
+document.getElementById('cancelBtn').addEventListener('click', closeSettings);
+document.getElementById('saveBtn').addEventListener('click', ()=>{
+  const cfg = {
+    calendar: document.getElementById('cfgCalendar').value.trim(),
+    wmataKey: document.getElementById('cfgKey').value.trim(),
+    rail: document.getElementById('cfgRail').value,
+    bus: document.getElementById('cfgBus').value,
+    interval: Math.max(15, parseInt(document.getElementById('cfgInterval').value,10) || 30)
+  };
+  saveConfig(cfg);
+  location.reload();
+});
+
+/* ---------- Init ---------- */
+let transitTimer = null;
+function init(){
+  const cfg = loadConfig();
+  tickClock();
+  setInterval(tickClock, 1000);
+
+  renderCalendar(cfg);
+  refreshTransit(cfg);
+  if(transitTimer) clearInterval(transitTimer);
+  transitTimer = setInterval(()=>refreshTransit(cfg), (cfg.interval||30)*1000);
+
+  const hasNothing = !cfg.calendar && !cfg.wmataKey;
+  if(hasNothing) openSettings(cfg);
+}
+init();
+
+/* Reload periodically to keep a kiosk display fresh over many hours */
+setTimeout(()=>location.reload(), 6*60*60*1000);
+</script>
+</body>
+</html>
